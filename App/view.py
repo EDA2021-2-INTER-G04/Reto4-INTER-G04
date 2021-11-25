@@ -40,7 +40,9 @@ operación seleccionada.
 #  Variables
 # ___________________________________________________
 
-
+airportsFile = "airports_full.csv"
+routesFile = "routes_full.csv"
+citiesFile = "worldcities.csv"
 
 
 # ___________________________________________________
@@ -52,8 +54,8 @@ def printMenu():
     print("\n")
     print("*******************************************")
     print("Bienvenido")
-    print("1- Cargar archivos")
-    print("2- Crear catálogo")
+    print("1- Crear catálogo")
+    print("2- Cargar archivos")
     print("3- Encontrar puntos de interconexión aérea")
     print("4- Encontrar clústeres de tráfico aéreo")
     print("5- Encontrar la ruta más corta entre ciudades")
@@ -65,9 +67,27 @@ def printMenu():
     print("*******************************************")
 
 
-def optionOne(cont):
-    print("\nCargando información de transporte de singapur ....")
+def optionTwo(analyzer):
+    print("\nCargando información...")
     start_time = time.process_time()
+    controller.loadData(analyzer, airportsFile, routesFile, citiesFile)
+    numAirports = controller.mapSize(analyzer["airports"])
+    numDiRoutes = controller.totalConnections(analyzer["routes"])
+    numNoRoutes = controller.totalConnections(analyzer["roundTrip"])
+    numCities = controller.mapSize(analyzer["cities"])
+    numDiVertices = controller.numVertices(analyzer["routes"])
+    numNoVertices = controller.numVertices(analyzer["roundTrip"])
+    print('\nNumero de aeropuertos: ' + str(numAirports))
+    print("Número de vértices en el digrafo: " + str(numDiVertices))
+    print('Numero de rutas en el digrafo: ' + str(numDiRoutes))
+    #print("Número de vértices en el grafo no dirigido: " + str(numNoVertices))
+    #print("Número de rutas en el grafo no dirigido: " + str(numNoRoutes))
+    print("Número de ciudades: " + str(numCities))
+    controller.printFirstAirport(analyzer)
+    controller.printLastCity(analyzer)
+    print('El limite de recursion actual: ' + str(sys.getrecursionlimit()))
+    stop_time = time.process_time()
+    elapsed_time_ms = (stop_time-start_time)*1000
     print("\nLa operación tardó ", elapsed_time_ms, " ms.")
 
 """
@@ -81,25 +101,32 @@ def thread_cycle():
         inputs = input('Seleccione una opción para continuar\n>')
 
         if int(inputs[0]) == 1:
-            optionOne(cont)
+            print("\nInicializando....")
+            # cont es el controlador que se usará de acá en adelante
+            analyzer = controller.init()
 
         elif int(inputs[0]) == 2:
-            optionTwo(cont)
+            optionTwo(analyzer)
 
         elif int(inputs[0]) == 3:
-            optionThree(cont)
+            #optionThree(analyzer)
+            pass
 
         elif int(inputs[0]) == 4:
-            optionFour(cont)
+            #optionFour(analyzer)
+            pass
 
         elif int(inputs[0]) == 5:
-            optionFive(cont)
+            #optionFive(analyzer)
+            pass
 
         elif int(inputs[0]) == 6:
-            optionSix(cont)
+            #optionSix(analyzer)
+            pass
 
         elif int(inputs[0]) == 7:
-            optionSeven(cont)
+            #optionSeven(analyzer)
+            pass
 
         else:
             sys.exit(0)
