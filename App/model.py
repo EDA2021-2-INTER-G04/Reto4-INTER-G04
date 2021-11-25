@@ -137,8 +137,8 @@ def createNonDirGraph(analyzer):
                     gr.insertVertex(nonDirGraph, vertex)
                 if not gr.containsVertex(nonDirGraph, adjVertex):
                     gr.insertVertex(nonDirGraph, adjVertex)
-                gr.addEdge(nonDirGraph, vertex, adjVertex, weight)              
-
+                if gr.getEdge(nonDirGraph, vertex, adjVertex) == None:
+                    gr.addEdge(nonDirGraph, vertex, adjVertex, weight)              
 
 # Funciones de consulta
 def mapSize(map):

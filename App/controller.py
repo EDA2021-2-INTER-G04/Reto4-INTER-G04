@@ -50,8 +50,8 @@ def loadData(analyzer, airportsFileName, routesFileName, citiesFileName):
     for route in routesFile:
         model.addRoute(analyzer, route)
 
-    #Anañadir rutas al grafo no dirigido
-    #model.createNonDirGraph(analyzer)
+    #Añadir rutas al grafo no dirigido
+    model.createNonDirGraph(analyzer)
 
     #Añadir aeropuertos al mapa
     for airport in airportsFile:
