@@ -54,7 +54,7 @@ def printMenu():
     print("\n")
     print("*******************************************")
     print("Bienvenido")
-    print("1- Crear catálogo")
+    print("1- Crear analizador")
     print("2- Cargar archivos")
     print("3- Encontrar puntos de interconexión aérea")
     print("4- Encontrar clústeres de tráfico aéreo")
@@ -65,7 +65,6 @@ def printMenu():
     print("9- Visualizar gráficamente los requerimientos")
     print("0- Salir")
     print("*******************************************")
-
 
 def optionTwo(analyzer):
     print("\nCargando información...")
@@ -85,16 +84,17 @@ def optionTwo(analyzer):
     print("Número de ciudades: " + str(numCities))
     controller.printFirstAirport(analyzer)
     controller.printLastCity(analyzer)
-    print('El limite de recursion actual: ' + str(sys.getrecursionlimit()))
+    print('\nEl limite de recursion actual: ' + str(sys.getrecursionlimit()))
     stop_time = time.process_time()
     elapsed_time_ms = (stop_time-start_time)*1000
     print("\nLa operación tardó ", elapsed_time_ms, " ms.")
 
+def optionFive(analyzer):
+    controller.minRoute(analyzer)    
+
 """
 Menu principal
 """
-
-
 def thread_cycle():
     while True:
         printMenu()
@@ -102,7 +102,6 @@ def thread_cycle():
 
         if int(inputs[0]) == 1:
             print("\nInicializando....")
-            # cont es el controlador que se usará de acá en adelante
             analyzer = controller.init()
 
         elif int(inputs[0]) == 2:
@@ -117,8 +116,8 @@ def thread_cycle():
             pass
 
         elif int(inputs[0]) == 5:
-            #optionFive(analyzer)
-            pass
+            #Requerimiento 3
+            optionFive(analyzer)
 
         elif int(inputs[0]) == 6:
             #optionSix(analyzer)

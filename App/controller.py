@@ -86,3 +86,7 @@ def numVertices(graph):
 
     return model.numVertices(graph)
 
+def minRoute(analyzer):
+
+    return model.minRoute(analyzer)
+

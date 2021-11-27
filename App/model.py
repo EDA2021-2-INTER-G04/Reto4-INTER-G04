@@ -32,6 +32,10 @@ from DISClib.DataStructures import mapentry as me
 from DISClib.Algorithms.Sorting import shellsort as sa
 from DISClib.Utils import error as error
 from DISClib.ADT import map as mp
+from haversine import haversine, Unit
+import webbrowser
+import folium
+from prettytable import PrettyTable
 from DISClib.ADT.graph import gr
 assert cf
 
@@ -46,7 +50,7 @@ def newAnalyzer():
         analyzer = {
                     'airports': None,
                     'routes': None,
-                    'countries': None,
+                    'cities': None,
                     'roundTrip': None
                     }
 
@@ -80,7 +84,7 @@ def addRoute(analyzer, route):
         return analyzer
 
     except Exception as exp:
-        error.reraise(exp, 'model:addStopConnection')
+        error.reraise(exp, 'model:addRoute')
 
 def addAirportRoute(analyzer, airportID):
     """
@@ -91,7 +95,7 @@ def addAirportRoute(analyzer, airportID):
             gr.insertVertex(analyzer['routes'], airportID)
         return analyzer
     except Exception as exp:
-        error.reraise(exp, 'model:addstop')
+        error.reraise(exp, 'model:addAirportRoute')
 
 def addConnection(analyzer, origin, destination, distance):
     """
@@ -105,7 +109,16 @@ def addAirport(analyzer, airport):
     mp.put(analyzer["airports"], airport["IATA"], airport)
 
 def addCity(analyzer, city):
-    mp.put(analyzer["cities"], city["city_ascii"], city)    
+    key = city["city_ascii"]
+    isPresent = mp.contains(analyzer["cities"], key)
+    if isPresent == True:
+        listCities = mp.get(analyzer["cities"], key)["value"]
+        lt.addLast(listCities, city)
+        mp.put(analyzer["cities"], key, listCities)
+    else:
+        listCities = lt.newList('ARRAY_LIST')
+        lt.addLast(listCities, city)
+        mp.put(analyzer["cities"], key, listCities) 
 
 # Funciones para creacion de datos
 def createOriginID(route):
@@ -156,29 +169,59 @@ def printFirstAirport(analyzer):
     airportsMap = analyzer["airports"]
     airports = mp.keySet(airportsMap)
     key = lt.getElement(airports, 1)
-    dic = mp.get(airportsMap, key)["value"]
-
+    airport = mp.get(airportsMap, key)["value"]
     print("\nPRIMER AEROPUERTO CARGADO")
-    print("Nombre: " + dic["Name"])
-    print("País: " + dic["Country"])
-    print("IATA: " + dic["IATA"])
-    print("Latitud: " + dic["Latitude"])
-    print("Longitud: " + dic["Longitude"])
+    table = PrettyTable()
+    table.field_names = ["Nombre", "País", "IATA", "Latitud", "Longitud"]
+    table.add_row([airport["Name"], airport["Country"], airport["IATA"], airport["Latitude"], airport["Longitude"]])
+    print(table)
 
 def printLastCity(analyzer):
     citiesMap = analyzer["cities"]
     cities = mp.keySet(citiesMap)
     key = lt.getElement(cities, lt.size(cities))
-    dic = mp.get(citiesMap, key)["value"]
-
+    list = mp.get(citiesMap, key)["value"]
+    city = lt.getElement(list, lt.size(list))
     print("\nÚLTIMA CIUDAD CARGADA")
-    print("Nombre: " + dic["city_ascii"])
-    print("Población: " + dic["population"])
-    print("Latitud: " + dic["lat"])
-    print("Longitud: " + dic["lng"])
+    table = PrettyTable()
+    table.field_names = ["Ciudad", "País", "Estado", "Latitud", "Longitud", "Población"]
+    table.add_row([city["city_ascii"], city["country"], city["admin_name"], city["lat"], city["lng"], city["population"]])
+    print(table)
 
 def numVertices(graph):
     return gr.numVertices(graph)
+
+def minRoute(analyzer):
+    try:
+        cities = analyzer["cities"]
+        inputCity1 = input("Ingrese el nombre de la ciudad de origen: ")
+        cityList1 = mp.get(cities, inputCity1)["value"]
+        
+        if cityList1 != None:
+            if lt.size(cityList1) > 1:
+                printCityOptions(cityList1)
+                pos = input("Ingrese el número de la ciudad que desea seleccionar: ") 
+                dictCity1 = lt.getElement(cityList1, int(pos))
+            else:
+                dictCity1 = lt.getElement(cityList1, 1)
+        else:
+            print("No se encontró la ciudad")
+        #map(dictCity1)
+        inputCity2 = input("\nIngrese el nombre de la ciudad de destino: ")
+        cityList2 = mp.get(cities, inputCity2)["value"]
+        
+        if cityList2 != None:
+            if lt.size(cityList2) > 1:
+                printCityOptions(cityList2)
+                pos = input("Ingrese el número de la ciudad que desea seleccionar: ") 
+                dictCity2 = lt.getElement(cityList2, int(pos))
+            else:
+                dictCity2 = lt.getElement(cityList2, 1)
+        else:
+            print("No se encontró la ciudad")
+
+    except Exception as exp:
+        error.reraise(exp, 'model:minRoute')
 
 # Funciones utilizadas para comparar elementos dentro de una lista
 def compareAirportIds(airport, keyValueAirport):
@@ -195,7 +238,7 @@ def compareAirportIds(airport, keyValueAirport):
 
 def cmpStrings(string, key):
     """
-    Compara dos estaciones
+    Compara dos strings
     """
     keyString = key['key']
     if (string == keyString):
@@ -207,7 +250,7 @@ def cmpStrings(string, key):
 
 # Funciones de ordenamiento
 
-# Funciones de verificación
+# Funciones auxiliares
 def verifyDistance(route):
     """
     En caso de que el archivo tenga un espacio en la
@@ -215,3 +258,43 @@ def verifyDistance(route):
     """
     if route['distance_km'] == '':
         route['distance_km'] = 0
+
+def printCityOptions(cityList):
+    table = PrettyTable()
+    table.field_names = ["No.", "Ciudad", "Latitud", "Longitud", "País", "Estado", "Población"]
+    for position in range(1, lt.size(cityList)+1):
+        city = lt.getElement(cityList, position)
+        table.add_row([str(position), city["city_ascii"], city["lat"], city["lng"], city["country"], city["admin_name"], city["population"]])
+    print(table)
+
+#def map(city):
+    """
+    lat = float(city["lat"])
+    lon = float(city["lng"])
+    map = folium.Map(location=[lat,lon], zoom_start=10, control_scale=True)
+
+    #Aumentar north y west = *
+    #Aumentar south y east = /
+    north = lat*1.001
+    south = lat/1.001
+    east = lon/1.001
+    west = lon*1.001
+    folium.Rectangle(
+    bounds=[[north,east],[south, west],[north,west],[south,east]],
+    color="#3186cc",
+    fill=True,
+    fill_color="#3186cc",
+    ).add_to(map)
+
+    folium.Rectangle(
+    bounds=[[north*1.001,east/1.001],[south/1.001, west*1.001],[north*1.001,west*1.001],[south/1.001,east/1.001]],
+    color="#ff0000",
+    fill=True,
+    fill_color="#ff0000",
+    ).add_to(map)
+
+    map.save("map.html")
+    mapDir = cf.file_dir + "/map.html"
+    print(mapDir)
+    webbrowser.open(mapDir, new=1)
+    """
