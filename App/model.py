@@ -32,10 +32,12 @@ from DISClib.DataStructures import mapentry as me
 from DISClib.Algorithms.Sorting import shellsort as sa
 from DISClib.Utils import error as error
 from DISClib.ADT import map as mp
+from DISClib.ADT import orderedmap as om
 from haversine import haversine, Unit
 import webbrowser
 import folium
 from prettytable import PrettyTable
+from DISClib.Algorithms.Graphs import scc as scc
 from DISClib.ADT.graph import gr
 assert cf
 
@@ -48,24 +50,23 @@ los mismos.
 def newAnalyzer():
     try:
         analyzer = {
-                    'airports': None,
+                    'airportsByLat': None,
                     'routes': None,
                     'cities': None,
                     'roundTrip': None
                     }
 
-        analyzer['airports'] = mp.newMap(numelements=10000,
-                                     maptype='PROBING',
-                                     comparefunction=compareAirportIds)
+        analyzer['airportsByLat'] = om.newMap(omaptype='RBT',
+                                     comparefunction=cmpFloats)
 
         analyzer['routes'] = gr.newGraph(datastructure='ADJ_LIST',
                                               directed=True,
-                                              size=14000,
+                                              size=4000,
                                               comparefunction=compareAirportIds)
 
         analyzer["cities"] = mp.newMap(numelements=37500, maptype="PROBING", comparefunction=cmpStrings)
 
-        analyzer["roundTrip"] = gr.newGraph(datastructure="ADJ_LIST", directed=False, size=14000, comparefunction=compareAirportIds)
+        analyzer["roundTrip"] = gr.newGraph(datastructure="ADJ_LIST", directed=False, size=3500, comparefunction=compareAirportIds)
         
         return analyzer
     
@@ -75,8 +76,8 @@ def newAnalyzer():
 # Funciones para agregar informacion al catalogo
 def addRoute(analyzer, route):
     try:
-        origin = createOriginID(route)
-        destination = createDestinationID(route)
+        origin = route["Departure"] #createOriginID(route)
+        destination = route["Destination"] #createDestinationID(route)
         verifyDistance(route)
         addAirportRoute(analyzer, origin)
         addAirportRoute(analyzer, destination)
@@ -106,7 +107,27 @@ def addConnection(analyzer, origin, destination, distance):
         gr.addEdge(analyzer['routes'], origin, destination, distance)
 
 def addAirport(analyzer, airport):
-    mp.put(analyzer["airports"], airport["IATA"], airport)
+    lat = str(round(float(airport["Latitude"]),2))
+    lon = str(round(float(airport["Longitude"]),2))
+    isPresent = om.contains(analyzer["airportsByLat"], lat)
+    if isPresent == True:
+        mapLon = om.get(analyzer["airportsByLat"], lat)["value"]
+        if om.contains(mapLon, lon) == True:
+            listLon = om.get(mapLon, lon)["value"]
+            lt.addLast(listLon, airport)
+            om.put(mapLon, lon, listLon)
+        else:
+            listLon = lt.newList('ARRAY_LIST')
+            lt.addLast(listLon, airport)
+            om.put(mapLon, lon, listLon)
+        om.put(analyzer["airportsByLat"], lat, mapLon)
+    
+    else:
+        mapLon = om.newMap("RBT",cmpFloats)
+        listLon = lt.newList('ARRAY_LIST')
+        lt.addLast(listLon, airport)
+        om.put(mapLon, lon, listLon)
+        om.put(analyzer["airportsByLat"], lat, mapLon)
 
 def addCity(analyzer, city):
     key = city["city_ascii"]
@@ -159,34 +180,16 @@ def mapSize(map):
 
     return size
 
+def ordMapSize(map):
+    size = om.size(map)
+
+    return size
+
 def totalConnections(graph):
     """
     Retorna el total arcos del grafo
     """
     return gr.numEdges(graph)
-
-def printFirstAirport(analyzer):
-    airportsMap = analyzer["airports"]
-    airports = mp.keySet(airportsMap)
-    key = lt.getElement(airports, 1)
-    airport = mp.get(airportsMap, key)["value"]
-    print("\nPRIMER AEROPUERTO CARGADO")
-    table = PrettyTable()
-    table.field_names = ["Nombre", "País", "IATA", "Latitud", "Longitud"]
-    table.add_row([airport["Name"], airport["Country"], airport["IATA"], airport["Latitude"], airport["Longitude"]])
-    print(table)
-
-def printLastCity(analyzer):
-    citiesMap = analyzer["cities"]
-    cities = mp.keySet(citiesMap)
-    key = lt.getElement(cities, lt.size(cities))
-    list = mp.get(citiesMap, key)["value"]
-    city = lt.getElement(list, lt.size(list))
-    print("\nÚLTIMA CIUDAD CARGADA")
-    table = PrettyTable()
-    table.field_names = ["Ciudad", "País", "Estado", "Latitud", "Longitud", "Población"]
-    table.add_row([city["city_ascii"], city["country"], city["admin_name"], city["lat"], city["lng"], city["population"]])
-    print(table)
 
 def numVertices(graph):
     return gr.numVertices(graph)
@@ -220,8 +223,28 @@ def minRoute(analyzer):
         else:
             print("No se encontró la ciudad")
 
+        airport1 = closestAirport(analyzer, dictCity1)
+        distance1 = haversine((dictCity1["lat"], dictCity1["lng"]), (airport1["Latitude"], airport1["Longitude"])) #Km
+        airport2 = closestAirport(analyzer, dictCity2)
+        distance2 = haversine((dictCity2["lat"], dictCity2["lng"]), (airport2["Latitude"], airport2["Longitude"])) #Km
+
     except Exception as exp:
         error.reraise(exp, 'model:minRoute')
+
+def findClusters(analyzer):
+    iata0 = input("Ingrese el código IATA del primer aeropuerto: ")
+    iata1 = input("Ingrese el código IATA del segundo aeropuerto: ")
+    stronglyConnected = scc.KosarajuSCC(analyzer["routes"])
+
+    totalSCC = stronglyConnected["components"]
+    idSCC = stronglyConnected["idscc"]
+
+    sameSCC = "no"
+    if mp.get(idSCC, iata0)["value"] == mp.get(idSCC, iata1)["value"]:
+        sameSCC = "sí" 
+
+    print("\nEl total de clústeres es de " + str(totalSCC) + ".")
+    print("\nLos dos aeropuertos " + sameSCC + " pertenecen al mismo clúster.")
 
 # Funciones utilizadas para comparar elementos dentro de una lista
 def compareAirportIds(airport, keyValueAirport):
@@ -248,6 +271,16 @@ def cmpStrings(string, key):
     else:
         return -1
 
+def cmpFloats(float1, float2):
+        float1 = float(float1)
+        float2 = float(float2)
+        if (float1 == float2):
+                return 0
+        elif (float1 > float2):
+                return 1
+        else:
+                return -1
+
 # Funciones de ordenamiento
 
 # Funciones auxiliares
@@ -267,7 +300,47 @@ def printCityOptions(cityList):
         table.add_row([str(position), city["city_ascii"], city["lat"], city["lng"], city["country"], city["admin_name"], city["population"]])
     print(table)
 
-#def map(city):
+def closestAirport(analyzer, city):
+    lon = city["lng"]
+    lat = city["lat"]
+
+    airportsTree = analyzer["airportsByLat"]
+    north = float(lat)*1.001
+    south = float(lat)/1.001
+    east = float(lon)/1.001
+    west = float(lon)*1.001
+
+    closeAirports = findAirports(airportsTree, north, south, east, west) 
+
+    if lt.size(closeAirports) > 1:
+        minDistance = 1000000000000
+        closestAirport = None
+
+        for airport in lt.iterator(closeAirports):
+            distance = haversine((lat, lon), (airport["Latitude"], airport["Longitude"])) #Km
+            if minDistance > distance:
+                minDistance = distance
+                closestAirport = airport
+    else:
+        closestAirport = lt.getElement(closeAirports, 1)
+
+    return closestAirport
+
+def findAirports(tree, north, south, east, west):
+    filteredByLat = om.values(tree, south, north) #Lista de mapas
+    filteredAirports = lt.newList("ARRAY_LIST")
+
+    for map in lt.iterator(filteredByLat):
+        filteredLon = om.values(map, east, west) #Lista de listas
+        for airport in lt.iterator(filteredLon):
+            lt.addLast(filteredAirports, airport)
+    
+    if lt.size(filteredAirports) == 0:
+        filteredAirports = findAirports(tree, north*1.001, south/1.001, west*1.001, east/1.001)
+
+    return filteredAirports  
+
+    #def map(city):
     """
     lat = float(city["lat"])
     lon = float(city["lng"])

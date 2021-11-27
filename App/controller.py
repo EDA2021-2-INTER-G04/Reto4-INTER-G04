@@ -74,14 +74,6 @@ def totalConnections(graph):
 
     return model.totalConnections(graph)
 
-def printFirstAirport(analyzer):
-    
-    model.printFirstAirport(analyzer)
-
-def printLastCity(analyzer):
-
-    model.printLastCity(analyzer)
-
 def numVertices(graph):
 
     return model.numVertices(graph)
@@ -89,4 +81,12 @@ def numVertices(graph):
 def minRoute(analyzer):
 
     return model.minRoute(analyzer)
+
+def findClusters(analyzer):
+
+    return model.findClusters(analyzer)
+
+def ordMapSize(map):
+    
+    return model.ordMapSize(map)
 

@@ -70,7 +70,7 @@ def optionTwo(analyzer):
     print("\nCargando información...")
     start_time = time.process_time()
     controller.loadData(analyzer, airportsFile, routesFile, citiesFile)
-    numAirports = controller.mapSize(analyzer["airports"])
+    numAirports = controller.ordMapSize(analyzer["airportsByLat"])
     numDiRoutes = controller.totalConnections(analyzer["routes"])
     numNoRoutes = controller.totalConnections(analyzer["roundTrip"])
     numCities = controller.mapSize(analyzer["cities"])
@@ -82,15 +82,24 @@ def optionTwo(analyzer):
     print("Número de vértices en el grafo no dirigido: " + str(numNoVertices))
     print("Número de rutas en el grafo no dirigido: " + str(numNoRoutes))
     print("Número de ciudades: " + str(numCities))
-    controller.printFirstAirport(analyzer)
-    controller.printLastCity(analyzer)
     print('\nEl limite de recursion actual: ' + str(sys.getrecursionlimit()))
     stop_time = time.process_time()
     elapsed_time_ms = (stop_time-start_time)*1000
     print("\nLa operación tardó ", elapsed_time_ms, " ms.")
 
+def optionFour(analyzer):
+    start_time = time.process_time()
+    controller.findClusters(analyzer)
+    stop_time = time.process_time()
+    elapsed_time_ms = (stop_time-start_time)*1000
+    print("\nLa operación tardó ", elapsed_time_ms, " ms.")
+
 def optionFive(analyzer):
-    controller.minRoute(analyzer)    
+    start_time = time.process_time()
+    controller.minRoute(analyzer) 
+    stop_time = time.process_time()
+    elapsed_time_ms = (stop_time-start_time)*1000
+    print("\nLa operación tardó ", elapsed_time_ms, " ms.")   
 
 """
 Menu principal
@@ -112,7 +121,7 @@ def thread_cycle():
             pass
 
         elif int(inputs[0]) == 4:
-            #optionFour(analyzer)
+            optionFour(analyzer)
             pass
 
         elif int(inputs[0]) == 5:
