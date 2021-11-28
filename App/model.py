@@ -39,6 +39,7 @@ import folium
 from prettytable import PrettyTable
 from DISClib.Algorithms.Graphs import scc as scc
 from DISClib.ADT.graph import gr
+from DISClib.Algorithms.Graphs.dijsktra import Dijkstra
 assert cf
 
 """
@@ -208,7 +209,7 @@ def minRoute(analyzer):
             else:
                 dictCity1 = lt.getElement(cityList1, 1)
         else:
-            print("No se encontró la ciudad")
+            print("No se encontró la ciudad.")
         #map(dictCity1)
         inputCity2 = input("\nIngrese el nombre de la ciudad de destino: ")
         cityList2 = mp.get(cities, inputCity2)["value"]
@@ -221,12 +222,12 @@ def minRoute(analyzer):
             else:
                 dictCity2 = lt.getElement(cityList2, 1)
         else:
-            print("No se encontró la ciudad")
+            print("No se encontró la ciudad.")
 
         airport1 = closestAirport(analyzer, dictCity1)
-        distance1 = haversine((dictCity1["lat"], dictCity1["lng"]), (airport1["Latitude"], airport1["Longitude"])) #Km
+        distance1 = haversine((float(dictCity1["lat"]), float(dictCity1["lng"])), (float(airport1["Latitude"]), float(airport1["Longitude"]))) #Km
         airport2 = closestAirport(analyzer, dictCity2)
-        distance2 = haversine((dictCity2["lat"], dictCity2["lng"]), (airport2["Latitude"], airport2["Longitude"])) #Km
+        distance2 = haversine((float(dictCity2["lat"]), float(dictCity2["lng"])), (float(airport2["Latitude"]), float(airport2["Longitude"]))) #Km
 
     except Exception as exp:
         error.reraise(exp, 'model:minRoute')
@@ -317,7 +318,7 @@ def closestAirport(analyzer, city):
         closestAirport = None
 
         for airport in lt.iterator(closeAirports):
-            distance = haversine((lat, lon), (airport["Latitude"], airport["Longitude"])) #Km
+            distance = haversine((float(lat), float(lon)), (float(airport["Latitude"]), float(airport["Longitude"]))) #Km
             if minDistance > distance:
                 minDistance = distance
                 closestAirport = airport
@@ -332,9 +333,10 @@ def findAirports(tree, north, south, east, west):
 
     for map in lt.iterator(filteredByLat):
         filteredLon = om.values(map, east, west) #Lista de listas
-        for airport in lt.iterator(filteredLon):
-            lt.addLast(filteredAirports, airport)
-    
+        for lonList in lt.iterator(filteredLon):
+            for airport in lt.iterator(lonList):
+                lt.addLast(filteredAirports, airport)
+
     if lt.size(filteredAirports) == 0:
         filteredAirports = findAirports(tree, north*1.001, south/1.001, west*1.001, east/1.001)
 
