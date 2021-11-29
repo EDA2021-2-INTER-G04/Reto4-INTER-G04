@@ -87,6 +87,13 @@ def optionTwo(analyzer):
     elapsed_time_ms = (stop_time-start_time)*1000
     print("\nLa operación tardó ", elapsed_time_ms, " ms.")
 
+def optionThree(analyzer):
+    start_time = time.process_time()
+    controller.findInterconection(analyzer)
+    stop_time = time.process_time()
+    elapsed_time_ms = (stop_time-start_time)*1000
+    print("\nLa operación tardó ", elapsed_time_ms, " ms.")
+
 def optionFour(analyzer):
     start_time = time.process_time()
     controller.findClusters(analyzer)
@@ -117,7 +124,7 @@ def thread_cycle():
             optionTwo(analyzer)
 
         elif int(inputs[0]) == 3:
-            #optionThree(analyzer)
+            optionThree(analyzer)
             pass
 
         elif int(inputs[0]) == 4:

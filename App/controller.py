@@ -82,6 +82,10 @@ def minRoute(analyzer):
 
     return model.minRoute(analyzer)
 
+def findInterconection(analyzer):
+
+    return model.findInterconection(analyzer)
+
 def findClusters(analyzer):
 
     return model.findClusters(analyzer)

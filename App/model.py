@@ -195,6 +195,39 @@ def totalConnections(graph):
 def numVertices(graph):
     return gr.numVertices(graph)
 
+def findInterconection(analyzer):
+
+    routes = analyzer["routes"]
+    vertices = gr.vertices(routes)
+    totalEdges = gr.edges(routes) 
+    mostInteractions = lt.newList(datastructure="ARRAY_LIST")
+    result = lt.newList(datastructure="ARRAY_LIST")
+    mostVertex = ""
+    mostDegree = 0
+
+    for vertex in lt.iterator(vertices):
+        actualDegree = gr.degree(routes, vertex)
+        if actualDegree >= mostDegree:
+            mostDegree = actualDegree
+            mostVertex = vertex
+    
+    for vertex in lt.iterator(vertices):
+        actualDegree = gr.degree(routes, vertex)
+        if actualDegree == mostDegree:
+            lt.addLast(mostInteractions, vertex)
+
+    for vertexb in lt.iterator(mostInteractions):
+        for actualedge in lt.iterator(totalEdges):
+            if actualedge["vertexB"] == vertexb:
+                if not lt.isPresent(result, actualedge["vertexA"]):
+                    lt.addLast(result,  actualedge["vertexA"])
+    
+            if actualedge["vertexA"] == vertexb:
+                if not lt.isPresent(result, actualedge["vertexB"]):
+                    lt.addLast(result,  actualedge["vertexB"])
+    
+    printFindInterconections(result, mostDegree)
+
 def minRoute(analyzer):
     try:
         cities = analyzer["cities"]
@@ -300,6 +333,20 @@ def printCityOptions(cityList):
         city = lt.getElement(cityList, position)
         table.add_row([str(position), city["city_ascii"], city["lat"], city["lng"], city["country"], city["admin_name"], city["population"]])
     print(table)
+
+def printFindInterconections(result, mostDegree):
+    
+    table = PrettyTable()
+    table.field_names = ["IATA", "Nombre", "Ciudad", "País"]
+    airportsList = result
+    print("\nLISTA DE AEREOPUERTOS:")
+    for m in range(1, mp.size(result)):
+        index = (lt.size(airportsList)+1)-m
+        airport = lt.getElement(airportsList, index)
+        table.add_row([airport, 0, 0, 0])
+    print(table)
+    print("\n El número de aereopuertos interconectados es de: " + str(mostDegree))
+
 
 def closestAirport(analyzer, city):
     lon = city["lng"]
