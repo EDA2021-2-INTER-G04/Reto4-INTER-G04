@@ -226,7 +226,7 @@ def findInterconection(analyzer):
                 if not lt.isPresent(result, actualedge["vertexB"]):
                     lt.addLast(result,  actualedge["vertexB"])
     
-    printFindInterconections(result, mostDegree)
+    printFindInterconections(analyzer, result, mostDegree)
 
 def minRoute(analyzer):
     try:
@@ -334,16 +334,27 @@ def printCityOptions(cityList):
         table.add_row([str(position), city["city_ascii"], city["lat"], city["lng"], city["country"], city["admin_name"], city["population"]])
     print(table)
 
-def printFindInterconections(result, mostDegree):
+def printFindInterconections(analyzer, result, mostDegree):
     
+    airports = om.valueSet(analyzer["airportsByLat"])
     table = PrettyTable()
     table.field_names = ["IATA", "Nombre", "Ciudad", "País"]
     airportsList = result
     print("\nLISTA DE AEREOPUERTOS:")
     for m in range(1, mp.size(result)):
+        find = False
         index = (lt.size(airportsList)+1)-m
-        airport = lt.getElement(airportsList, index)
-        table.add_row([airport, 0, 0, 0])
+        indexA = 1
+        actualIATA = lt.getElement(airportsList, index)
+        while indexA <= lt.size(airports) and find == False:
+            airportSet = lt.getElement(airports, indexA)
+            airportValue = om.valueSet(airportSet)
+            airport = lt.getElement(airportValue, 1)["elements"]
+            for element in airport:
+                if element["IATA"] == actualIATA:
+                    find = True
+                    table.add_row([element["IATA"], element["Name"], element["City"], element["Country"]])
+            indexA += 1
     print(table)
     print("\n El número de aereopuertos interconectados es de: " + str(mostDegree))
 
