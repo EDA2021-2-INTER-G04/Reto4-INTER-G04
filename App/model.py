@@ -410,7 +410,7 @@ def printclosedAirport(analyzer, result, iata):
     result = result["elements"]
     table = PrettyTable()
     table.field_names = ["IATA", "Nombre", "Ciudad", "País"]
-    print("\nHay " + str(size) + " aereopuertos afectados por el cierre de " + iata)
+    print("\nHay " + str(size) + " aereopuertos afectados por el cierre de " + iata + ".")
     print("\nLos primeros y últimos 3 afectados son: ")
     if size >= 6:
         for m in range(1, 4):
