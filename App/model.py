@@ -301,7 +301,7 @@ def closedAirport(analyzer):
 
     routes = analyzer["routes"]
     totalEdges = gr.edges(routes) 
-    result = lt.newList(datastructure="ARRAY_LIST")
+    result = lt.newList(datastructure="ARRAY_LIST", cmpfunction=cmpStrings2)
     
     for actualedge in lt.iterator(totalEdges):
         if actualedge["vertexB"] == iata:
