@@ -90,6 +90,10 @@ def findClusters(analyzer):
 
     return model.findClusters(analyzer)
 
+def closedAirport(analyzer):
+    
+    return model.closedAirport(analyzer) 
+
 def ordMapSize(map):
     
     return model.ordMapSize(map)

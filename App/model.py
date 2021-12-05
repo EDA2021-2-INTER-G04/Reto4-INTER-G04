@@ -52,6 +52,7 @@ def newAnalyzer():
     try:
         analyzer = {
                     'airportsByLat': None,
+                    'airpotsByIATA' : None,
                     'routes': None,
                     'cities': None,
                     'roundTrip': None
@@ -59,6 +60,9 @@ def newAnalyzer():
 
         analyzer['airportsByLat'] = om.newMap(omaptype='RBT',
                                      comparefunction=cmpFloats)
+
+        analyzer['airportsByIATA'] = om.newMap(omaptype='RBT',
+                                     comparefunction=cmpStrings2)
 
         analyzer['routes'] = gr.newGraph(datastructure='ADJ_LIST',
                                               directed=True,
@@ -129,6 +133,18 @@ def addAirport(analyzer, airport):
         lt.addLast(listLon, airport)
         om.put(mapLon, lon, listLon)
         om.put(analyzer["airportsByLat"], lat, mapLon)
+    
+    IATA = airport["IATA"]
+    isPresent = om.contains(analyzer["airportsByIATA"], IATA)
+    if isPresent == True:
+            listIATA = om.get(analyzer["airportsByIATA"], IATA)["value"]
+            lt.addLast(listIATA, airport)
+            om.put(analyzer["airportsByIATA"], IATA, listIATA)
+    else:
+            listIATA = lt.newList('ARRAY_LIST')
+            lt.addLast(listIATA, airport)
+            om.put(analyzer["airportsByIATA"], IATA, listIATA)
+
 
 def addCity(analyzer, city):
     key = city["city_ascii"]
@@ -280,6 +296,23 @@ def findClusters(analyzer):
     print("\nEl total de clústeres es de " + str(totalSCC) + ".")
     print("\nLos dos aeropuertos " + sameSCC + " pertenecen al mismo clúster.")
 
+def closedAirport(analyzer):
+    iata = input("Ingrese el código IATA del aeropuerto: ")
+
+    routes = analyzer["routes"]
+    totalEdges = gr.edges(routes) 
+    result = lt.newList(datastructure="ARRAY_LIST")
+    
+    for actualedge in lt.iterator(totalEdges):
+        if actualedge["vertexB"] == iata:
+            if not lt.isPresent(result, actualedge["vertexA"]):
+                lt.addLast(result,  actualedge["vertexA"])
+    
+        if actualedge["vertexA"] == iata:
+            if not lt.isPresent(result, actualedge["vertexB"]):
+                lt.addLast(result,  actualedge["vertexB"])
+
+    printclosedAirport(analyzer, result, iata)
 # Funciones utilizadas para comparar elementos dentro de una lista
 def compareAirportIds(airport, keyValueAirport):
     """
@@ -298,6 +331,18 @@ def cmpStrings(string, key):
     Compara dos strings
     """
     keyString = key['key']
+    if (string == keyString):
+        return 0
+    elif (string > keyString):
+        return 1
+    else:
+        return -1
+
+def cmpStrings2(string, key):
+    """
+    Compara dos strings
+    """
+    keyString = key
     if (string == keyString):
         return 0
     elif (string > keyString):
@@ -358,6 +403,34 @@ def printFindInterconections(analyzer, result, mostDegree):
     print(table)
     print("\n El número de aereopuertos interconectados es de: " + str(mostDegree))
 
+def printclosedAirport(analyzer, result, iata):
+
+    airports = analyzer["airportsByIATA"]
+    size = lt.size(result)
+    result = result["elements"]
+    table = PrettyTable()
+    table.field_names = ["IATA", "Nombre", "Ciudad", "País"]
+    print("\nHay " + str(size) + " aereopuertos afectados por el cierre de " + iata)
+    print("\nLos primeros y últimos 3 afectados son: ")
+    if size >= 6:
+        for m in range(1, 4):
+            iata = result[m]
+            actualIATA = om.get(airports, iata)["value"]
+            actualIATA = actualIATA["elements"][0]
+            table.add_row([actualIATA["IATA"], actualIATA["Name"], actualIATA["City"], actualIATA["Country"]])
+        for n in range(1, 4):
+            index = (size)-n
+            iata = result[index]
+            actualIATA = om.get(airports, iata)["value"]
+            actualIATA = actualIATA["elements"][0]
+            table.add_row([actualIATA["IATA"], actualIATA["Name"], actualIATA["City"], actualIATA["Country"]])
+    else:
+        for element in result:
+            actualIATA = om.get(airports, element)["value"]
+            actualIATA = actualIATA["elements"][0]
+            table.add_row([actualIATA["IATA"], actualIATA["Name"], actualIATA["City"], actualIATA["Country"]])
+    
+    print(table)
 
 def closestAirport(analyzer, city):
     lon = city["lng"]

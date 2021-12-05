@@ -40,9 +40,10 @@ operación seleccionada.
 #  Variables
 # ___________________________________________________
 
-airportsFile = "airports_full.csv"
-routesFile = "routes_full.csv"
-citiesFile = "worldcities.csv"
+airportsFile = "airports-utf8-small.csv"
+routesFile = "routes-utf8-small.csv"
+citiesFile = "worldcities-utf8.csv"
+
 
 
 # ___________________________________________________
@@ -108,6 +109,13 @@ def optionFive(analyzer):
     elapsed_time_ms = (stop_time-start_time)*1000
     print("\nLa operación tardó ", elapsed_time_ms, " ms.")   
 
+def optionSeven(analyzer):
+    start_time = time.process_time()
+    controller.closedAirport(analyzer) 
+    stop_time = time.process_time()
+    elapsed_time_ms = (stop_time-start_time)*1000
+    print("\nLa operación tardó ", elapsed_time_ms, " ms.")
+
 """
 Menu principal
 """
@@ -140,7 +148,7 @@ def thread_cycle():
             pass
 
         elif int(inputs[0]) == 7:
-            #optionSeven(analyzer)
+            optionSeven(analyzer)
             pass
 
         else:
