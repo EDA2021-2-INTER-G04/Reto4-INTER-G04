@@ -30,6 +30,7 @@ from DISClib.ADT import list as lt
 from DISClib.ADT import map as mp
 from DISClib.DataStructures import mapentry as me
 from DISClib.Algorithms.Sorting import shellsort as sa
+from DISClib.Algorithms.Sorting import mergesort as ms
 from DISClib.Utils import error as error
 from DISClib.ADT import map as mp
 from DISClib.ADT import orderedmap as om
@@ -213,36 +214,28 @@ def numVertices(graph):
 
 def findInterconection(analyzer):
 
+    airportsbyDegree = lt.newList(datastructure="ARRAY_LIST")
+    mostInteractions = lt.newList(datastructure="ARRAY_LIST")
     routes = analyzer["routes"]
     vertices = gr.vertices(routes)
-    totalEdges = gr.edges(routes) 
-    mostInteractions = lt.newList(datastructure="ARRAY_LIST")
-    result = lt.newList(datastructure="ARRAY_LIST")
-    mostVertex = ""
-    mostDegree = 0
+    totalEdges = gr.edges(routes)
 
     for vertex in lt.iterator(vertices):
-        actualDegree = gr.degree(routes, vertex)
-        if actualDegree >= mostDegree:
-            mostDegree = actualDegree
-            mostVertex = vertex
+        inDegree = gr.indegree(routes, vertex)
+        outDegree = gr.outdegree(routes, vertex)
+        actualDegree = inDegree + outDegree
+        element = {"key": vertex, "value": actualDegree}
+        lt.addLast(airportsbyDegree, element)
     
-    for vertex in lt.iterator(vertices):
-        actualDegree = gr.degree(routes, vertex)
-        if actualDegree == mostDegree:
-            lt.addLast(mostInteractions, vertex)
-
-    for vertexb in lt.iterator(mostInteractions):
-        for actualedge in lt.iterator(totalEdges):
-            if actualedge["vertexB"] == vertexb:
-                if not lt.isPresent(result, actualedge["vertexA"]):
-                    lt.addLast(result,  actualedge["vertexA"])
+    ms.sort(airportsbyDegree, cmpDegree)
+    size = lt.size(airportsbyDegree)
     
-            if actualedge["vertexA"] == vertexb:
-                if not lt.isPresent(result, actualedge["vertexB"]):
-                    lt.addLast(result,  actualedge["vertexB"])
+    for i in range(1, 6):
+        index = (lt.size(airportsbyDegree)+1)-i
+        iata = lt.getElement(airportsbyDegree, index)
+        lt.addLast(mostInteractions, iata["key"])
     
-    printFindInterconections(analyzer, result, mostDegree)
+    printFindInterconections(analyzer, mostInteractions, size)
 
 def minRoute(analyzer):
     try:
@@ -301,16 +294,16 @@ def closedAirport(analyzer):
 
     routes = analyzer["routes"]
     totalEdges = gr.edges(routes) 
-    result = lt.newList(datastructure="ARRAY_LIST", cmpfunction=cmpStrings2)
+    result = lt.newList(datastructure="ARRAY_LIST")
     
     for actualedge in lt.iterator(totalEdges):
         if actualedge["vertexB"] == iata:
             if not lt.isPresent(result, actualedge["vertexA"]):
                 lt.addLast(result,  actualedge["vertexA"])
     
-        if actualedge["vertexA"] == iata:
+        """if actualedge["vertexA"] == iata:
             if not lt.isPresent(result, actualedge["vertexB"]):
-                lt.addLast(result,  actualedge["vertexB"])
+                lt.addLast(result,  actualedge["vertexB"])"""
 
     printclosedAirport(analyzer, result, iata)
 # Funciones utilizadas para comparar elementos dentro de una lista
@@ -360,6 +353,25 @@ def cmpFloats(float1, float2):
         else:
                 return -1
 
+def cmpDegree(degree1, degree2):
+
+    degree1 = degree1["value"]
+    degree2 = degree2["value"]
+    try:
+        int(degree1)
+        int(degree2)
+        its_int = True
+    except ValueError:
+        its_int = False
+        return False
+
+    if its_int == True:
+        return degree1 < degree2
+
+def cmpIATA(iata1, iata2):
+
+        return iata1 < iata2
+
 # Funciones de ordenamiento
 
 # Funciones auxiliares
@@ -379,29 +391,19 @@ def printCityOptions(cityList):
         table.add_row([str(position), city["city_ascii"], city["lat"], city["lng"], city["country"], city["admin_name"], city["population"]])
     print(table)
 
-def printFindInterconections(analyzer, result, mostDegree):
-    
-    airports = om.valueSet(analyzer["airportsByLat"])
+def printFindInterconections(analyzer, mostInteractions, size):
+
+    airports = analyzer["airportsByIATA"]
+    keyset = mostInteractions["elements"]
     table = PrettyTable()
     table.field_names = ["IATA", "Nombre", "Ciudad", "País"]
-    airportsList = result
-    print("\nLISTA DE AEREOPUERTOS:")
-    for m in range(1, mp.size(result)):
-        find = False
-        index = (lt.size(airportsList)+1)-m
-        indexA = 1
-        actualIATA = lt.getElement(airportsList, index)
-        while indexA <= lt.size(airports) and find == False:
-            airportSet = lt.getElement(airports, indexA)
-            airportValue = om.valueSet(airportSet)
-            airport = lt.getElement(airportValue, 1)["elements"]
-            for element in airport:
-                if element["IATA"] == actualIATA:
-                    find = True
-                    table.add_row([element["IATA"], element["Name"], element["City"], element["Country"]])
-            indexA += 1
+    print("\nHay " + str(size) + " aereopuertos interconectados en la red")
+    print("\nEl TOP 5 de los aereopuertos más interconectados son: ")
+    for iata in keyset:
+        actualIATA = om.get(airports, iata)["value"]
+        actualIATA = actualIATA["elements"][0]
+        table.add_row([actualIATA["IATA"], actualIATA["Name"], actualIATA["City"], actualIATA["Country"]])
     print(table)
-    print("\n El número de aereopuertos interconectados es de: " + str(mostDegree))
 
 def printclosedAirport(analyzer, result, iata):
 

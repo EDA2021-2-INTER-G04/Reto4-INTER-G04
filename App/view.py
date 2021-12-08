@@ -40,8 +40,8 @@ operación seleccionada.
 #  Variables
 # ___________________________________________________
 
-airportsFile = "airports-utf8-small.csv"
-routesFile = "routes-utf8-small.csv"
+airportsFile = "airports-utf8-large.csv"
+routesFile = "routes-utf8-large.csv"
 citiesFile = "worldcities-utf8.csv"
 
 
