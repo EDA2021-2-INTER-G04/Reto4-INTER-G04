@@ -62,8 +62,8 @@ def newAnalyzer():
         analyzer['airportsByLat'] = om.newMap(omaptype='RBT',
                                      comparefunction=cmpFloats)
 
-        analyzer['airportsByIATA'] = om.newMap(omaptype='RBT',
-                                     comparefunction=cmpStrings2)
+        analyzer['airportsByIATA'] = mp.newMap(maptype='CHAINING',
+                                     comparefunction=cmpStrings)
 
         analyzer['routes'] = gr.newGraph(datastructure='ADJ_LIST',
                                               directed=True,
@@ -82,25 +82,25 @@ def newAnalyzer():
 # Funciones para agregar informacion al catalogo
 def addRoute(analyzer, route):
     try:
-        origin = route["Departure"] #createOriginID(route)
-        destination = route["Destination"] #createDestinationID(route)
+        origin = route["Departure"]
+        destination = route["Destination"] 
         verifyDistance(route)
-        addAirportRoute(analyzer, origin)
-        addAirportRoute(analyzer, destination)
+        #addAirportRoute(analyzer, origin)
+        #addAirportRoute(analyzer, destination)
         addConnection(analyzer, origin, destination, route["distance_km"])
         return analyzer
 
     except Exception as exp:
         error.reraise(exp, 'model:addRoute')
 
-def addAirportRoute(analyzer, airportID):
+def addAirportRoute(graph, airportID):
     """
     Adiciona un aeropuerto como un vertice del grafo
     """
     try:
-        if not gr.containsVertex(analyzer['routes'], airportID):
-            gr.insertVertex(analyzer['routes'], airportID)
-        return analyzer
+        if not gr.containsVertex(graph, airportID):
+            gr.insertVertex(graph, airportID)
+        return graph
     except Exception as exp:
         error.reraise(exp, 'model:addAirportRoute')
 
@@ -136,15 +136,15 @@ def addAirport(analyzer, airport):
         om.put(analyzer["airportsByLat"], lat, mapLon)
     
     IATA = airport["IATA"]
-    isPresent = om.contains(analyzer["airportsByIATA"], IATA)
+    isPresent = mp.contains(analyzer["airportsByIATA"], IATA)
     if isPresent == True:
-            listIATA = om.get(analyzer["airportsByIATA"], IATA)["value"]
+            listIATA = mp.get(analyzer["airportsByIATA"], IATA)["value"]
             lt.addLast(listIATA, airport)
-            om.put(analyzer["airportsByIATA"], IATA, listIATA)
+            mp.put(analyzer["airportsByIATA"], IATA, listIATA)
     else:
             listIATA = lt.newList('ARRAY_LIST')
             lt.addLast(listIATA, airport)
-            om.put(analyzer["airportsByIATA"], IATA, listIATA)
+            mp.put(analyzer["airportsByIATA"], IATA, listIATA)
 
 
 def addCity(analyzer, city):
@@ -160,18 +160,6 @@ def addCity(analyzer, city):
         mp.put(analyzer["cities"], key, listCities) 
 
 # Funciones para creacion de datos
-def createOriginID(route):
-    departure = route["Departure"] + "-"
-    name = departure + route["Airline"]
-
-    return name
-
-def createDestinationID(route):
-    departure = route["Destination"] + "-"
-    name = departure + route["Airline"]
-
-    return name
-
 def createNonDirGraph(analyzer):
     dirGraph = analyzer["routes"]
     nonDirGraph = analyzer["roundTrip"]
@@ -194,12 +182,24 @@ def createNonDirGraph(analyzer):
 
 # Funciones de consulta
 def mapSize(map):
-    size = mp.size(map)
+    size = 0
+
+    keys = mp.keySet(map)
+
+    for key in lt.iterator(keys):
+        actualSize = lt.size(mp.get(map, key)["value"])
+        size += actualSize
 
     return size
 
 def ordMapSize(map):
-    size = om.size(map)
+    size = 0
+
+    keys = om.keySet(map)
+
+    for key in lt.iterator(keys):
+        actualSize = lt.size(om.get(map, key)["value"])
+        size += actualSize
 
     return size
 
@@ -306,6 +306,19 @@ def closedAirport(analyzer):
                 lt.addLast(result,  actualedge["vertexB"])
 
     printclosedAirport(analyzer, result, iata)
+
+def getAirportByIATA(IATA, analyzer):
+    airports = analyzer["airportsByIATA"]
+    airport = lt.getElement(mp.get(airports, IATA)["value"], 1)
+
+    return airport
+
+def getCity(city, analyzer):
+    cities = analyzer["cities"]
+    city = lt.getElement(mp.get(cities, city)["value"], 1)
+
+    return city
+
 # Funciones utilizadas para comparar elementos dentro de una lista
 def compareAirportIds(airport, keyValueAirport):
     """
@@ -400,7 +413,7 @@ def printFindInterconections(analyzer, mostInteractions, size):
     print("\nHay " + str(size) + " aereopuertos interconectados en la red")
     print("\nEl TOP 5 de los aereopuertos más interconectados son: ")
     for iata in keyset:
-        actualIATA = om.get(airports, iata)["value"]
+        actualIATA = mp.get(airports, iata)["value"]
         actualIATA = actualIATA["elements"][0]
         table.add_row([actualIATA["IATA"], actualIATA["Name"], actualIATA["City"], actualIATA["Country"]])
     print(table)
@@ -418,21 +431,41 @@ def printclosedAirport(analyzer, result, iata):
     if size >= 6:
         for m in range(1, 4):
             iata = result[m]
-            actualIATA = om.get(airports, iata)["value"]
+            actualIATA = mp.get(airports, iata)["value"]
             actualIATA = actualIATA["elements"][0]
             table.add_row([actualIATA["IATA"], actualIATA["Name"], actualIATA["City"], actualIATA["Country"]])
         for n in range(1, 4):
             index = (size)-n
             iata = result[index]
-            actualIATA = om.get(airports, iata)["value"]
+            actualIATA = mp.get(airports, iata)["value"]
             actualIATA = actualIATA["elements"][0]
             table.add_row([actualIATA["IATA"], actualIATA["Name"], actualIATA["City"], actualIATA["Country"]])
     else:
         for element in result:
-            actualIATA = om.get(airports, element)["value"]
+            actualIATA = mp.get(airports, element)["value"]
             actualIATA = actualIATA["elements"][0]
             table.add_row([actualIATA["IATA"], actualIATA["Name"], actualIATA["City"], actualIATA["Country"]])
     
+    print(table)
+
+def printFirstLastAirports(analyzer):
+    table = PrettyTable()
+    table.field_names = ["Nombre", "Ciudad", "País", "Latitud", "Longitud"]
+    airport0 = analyzer["firstAirport"]
+    airport1 = analyzer["lastAirport"]
+    table.add_row([airport0["Name"], airport0["City"], airport0["Country"], airport0["Latitude"], airport0["Longitude"]])
+    table.add_row([airport1["Name"], airport1["City"], airport1["Country"], airport1["Latitude"], airport1["Longitude"]])
+    print("\nPRIMER Y ÚLTIMO AEROPUERTO CARGADO")
+    print(table)
+
+def printFirstLastCities(analyzer):
+    table = PrettyTable()
+    table.field_names = ["Ciudad", "Población", "Latitud", "Longitud"]
+    city0 = analyzer["firstCity"]
+    city1 = analyzer["lastCity"]
+    table.add_row([city0["city_ascii"], city0["population"], city0["lat"], city0["lng"]])
+    table.add_row([city1["city_ascii"], city1["population"], city1["lat"], city1["lng"]])
+    print("\nPRIMERA Y ÚLTIMA CIUDAD CARGADA")
     print(table)
 
 def closestAirport(analyzer, city):

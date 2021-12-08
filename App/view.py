@@ -40,11 +40,7 @@ operación seleccionada.
 #  Variables
 # ___________________________________________________
 
-airportsFile = "airports-utf8-small.csv"
-routesFile = "routes-utf8-small.csv"
 citiesFile = "worldcities-utf8.csv"
-
-
 
 # ___________________________________________________
 #  Menu principal
@@ -70,19 +66,33 @@ def printMenu():
 def optionTwo(analyzer):
     print("\nCargando información...")
     start_time = time.process_time()
+    print("Seleccione el tamaño de la muestra")
+    print("1- Small")
+    print("2- 5%")
+    print("3- 10%")
+    print("4- 20%")
+    print("5- 30%")
+    print("6- 50%")
+    print("7- 80%")
+    print("8- Large")
+    sample = int(input())
+    airportsFile = controller.selectSample(sample)[0]
+    routesFile = controller.selectSample(sample)[1]
     controller.loadData(analyzer, airportsFile, routesFile, citiesFile)
-    numAirports = controller.ordMapSize(analyzer["airportsByLat"])
+    numAirports = controller.mapSize(analyzer["airportsByIATA"])
     numDiRoutes = controller.totalConnections(analyzer["routes"])
     numNoRoutes = controller.totalConnections(analyzer["roundTrip"])
     numCities = controller.mapSize(analyzer["cities"])
     numDiVertices = controller.numVertices(analyzer["routes"])
     numNoVertices = controller.numVertices(analyzer["roundTrip"])
     print('\nNumero de aeropuertos: ' + str(numAirports))
-    print("Número de vértices en el digrafo: " + str(numDiVertices))
-    print('Numero de rutas en el digrafo: ' + str(numDiRoutes))
-    print("Número de vértices en el grafo no dirigido: " + str(numNoVertices))
-    print("Número de rutas en el grafo no dirigido: " + str(numNoRoutes))
-    print("Número de ciudades: " + str(numCities))
+    print("\nNúmero de vértices en el digrafo: " + str(numDiVertices))
+    print('Numero de conexiones en el digrafo: ' + str(numDiRoutes))
+    print("\nNúmero de vértices en el grafo no dirigido: " + str(numNoVertices))
+    print("Número de conexiones en el grafo no dirigido: " + str(numNoRoutes))
+    print("\nNúmero de ciudades: " + str(numCities))
+    controller.printFirstLastAirports(analyzer)
+    controller.printFirstLastCities(analyzer)
     print('\nEl limite de recursion actual: ' + str(sys.getrecursionlimit()))
     stop_time = time.process_time()
     elapsed_time_ms = (stop_time-start_time)*1000

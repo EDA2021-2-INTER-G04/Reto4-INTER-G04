@@ -44,22 +44,40 @@ def loadData(analyzer, airportsFileName, routesFileName, citiesFileName):
                                 delimiter=",")
     cities = cf.data_dir + citiesFileName
     citiesFile = csv.DictReader(open(cities, encoding="utf-8"),
-                                delimiter=",")   
+                                delimiter=",")  
+
+    firstAirport = None
+    lastAirport = None
+    firstCity = None
+    lastCity = None 
+
+    #Añadir aeropuertos al mapa
+    for airport in airportsFile:
+        model.addAirportRoute(analyzer["routes"], airport["IATA"])
+        model.addAirportRoute(analyzer["roundTrip"], airport["IATA"])
+        model.addAirport(analyzer, airport)
 
     #Añadir rutas al grafo dirigido
     for route in routesFile:
+        if firstAirport == None:
+            firstAirport = route["Departure"]
+        lastAirport = route["Destination"]
         model.addRoute(analyzer, route)
 
     #Añadir rutas al grafo no dirigido
     model.createNonDirGraph(analyzer)
 
-    #Añadir aeropuertos al mapa
-    for airport in airportsFile:
-        model.addAirport(analyzer, airport)
-
     #Añadir ciudades al mapa
     for city in citiesFile:
-        model.addCity(analyzer, city)   
+        if firstCity == None:
+            firstCity = city["city_ascii"]
+        lastCity = city["city_ascii"]
+        model.addCity(analyzer, city)  
+
+    analyzer["firstAirport"] = model.getAirportByIATA(firstAirport, analyzer)
+    analyzer["lastAirport"] = model.getAirportByIATA(lastAirport, analyzer)
+    analyzer["firstCity"] = model.getCity(firstCity, analyzer)
+    analyzer["lastCity"] = model.getCity(lastCity, analyzer)
 
     return analyzer
 
@@ -97,4 +115,51 @@ def closedAirport(analyzer):
 def ordMapSize(map):
     
     return model.ordMapSize(map)
+
+def printFirstLastAirports(analyzer):
+
+    model.printFirstLastAirports(analyzer)
+
+def printFirstLastCities(analyzer):
+
+    model.printFirstLastCities(analyzer)
+
+#Funciones auxiliares
+def selectSample(sample):
+    airportStr = "airports-utf8-"
+    routeStr = "routes-utf8-"
+
+    if sample == 1:
+        airportStr += "small.csv"
+        routeStr += "small.csv"
+    
+    elif sample == 2:
+        airportStr += "5pct.csv"
+        routeStr += "5pct.csv"
+
+    elif sample == 3:
+        airportStr += "10pct.csv"
+        routeStr += "10pct.csv"
+
+    elif sample == 4:
+        airportStr += "20pct.csv"
+        routeStr += "20pct.csv"
+    
+    elif sample == 5:
+        airportStr += "30pct.csv"
+        routeStr += "30pct.csv"
+
+    elif sample == 6:
+        airportStr += "50pct.csv"
+        routeStr += "50pct.csv"
+
+    elif sample == 7:
+        airportStr += "80pct.csv"
+        routeStr += "80pct.csv"
+
+    elif sample == 8:
+        airportStr += "large.csv"
+        routeStr += "large.csv"
+
+    return airportStr,routeStr
 
