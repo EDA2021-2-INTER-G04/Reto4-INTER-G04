@@ -41,6 +41,7 @@ from prettytable import PrettyTable
 from DISClib.Algorithms.Graphs import scc as scc
 from DISClib.ADT.graph import gr
 from DISClib.Algorithms.Graphs.dijsktra import Dijkstra
+from DISClib.Algorithms.Graphs.bellmanford import BellmanFord
 assert cf
 
 """
@@ -252,7 +253,8 @@ def minRoute(analyzer):
                 dictCity1 = lt.getElement(cityList1, 1)
         else:
             print("No se encontró la ciudad.")
-        #map(dictCity1)
+    
+
         inputCity2 = input("\nIngrese el nombre de la ciudad de destino: ")
         cityList2 = mp.get(cities, inputCity2)["value"]
         
@@ -268,8 +270,10 @@ def minRoute(analyzer):
 
         airport1 = closestAirport(analyzer, dictCity1)
         distance1 = haversine((float(dictCity1["lat"]), float(dictCity1["lng"])), (float(airport1["Latitude"]), float(airport1["Longitude"]))) #Km
+        
         airport2 = closestAirport(analyzer, dictCity2)
         distance2 = haversine((float(dictCity2["lat"]), float(dictCity2["lng"])), (float(airport2["Latitude"]), float(airport2["Longitude"]))) #Km
+
 
     except Exception as exp:
         error.reraise(exp, 'model:minRoute')
@@ -473,10 +477,10 @@ def closestAirport(analyzer, city):
     lat = city["lat"]
 
     airportsTree = analyzer["airportsByLat"]
-    north = float(lat)*1.001
-    south = float(lat)/1.001
-    east = float(lon)/1.001
-    west = float(lon)*1.001
+    north = float(lat)+(float(lat)*0.005)
+    south = float(lat)-(float(lat)*0.005)
+    east = float(lon)-(float(lon)*0.005)
+    west = float(lon)+(float(lon)*0.005)
 
     closeAirports = findAirports(airportsTree, north, south, east, west) 
 
@@ -498,14 +502,17 @@ def findAirports(tree, north, south, east, west):
     filteredByLat = om.values(tree, south, north) #Lista de mapas
     filteredAirports = lt.newList("ARRAY_LIST")
 
-    for map in lt.iterator(filteredByLat):
-        filteredLon = om.values(map, east, west) #Lista de listas
-        for lonList in lt.iterator(filteredLon):
-            for airport in lt.iterator(lonList):
-                lt.addLast(filteredAirports, airport)
+    if lt.size(filteredByLat) != 0:
+        for map in lt.iterator(filteredByLat):
+            filteredLon = om.values(map, east, west) #Lista de listas
+            if lt.size(filteredLon) != 0:
+                for lonList in lt.iterator(filteredLon):
+                    if lt.size(lonList) != 0:
+                        for airport in lt.iterator(lonList):
+                            lt.addLast(filteredAirports, airport)
 
     if lt.size(filteredAirports) == 0:
-        filteredAirports = findAirports(tree, north*1.001, south/1.001, west*1.001, east/1.001)
+        filteredAirports = findAirports(tree, north+(north*0.005), south-(south*0.005), west+(west*0.005), east-(east*0.005))
 
     return filteredAirports  
 
