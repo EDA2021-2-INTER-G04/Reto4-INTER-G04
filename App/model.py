@@ -301,9 +301,9 @@ def closedAirport(analyzer):
             if not lt.isPresent(result, actualedge["vertexA"]):
                 lt.addLast(result,  actualedge["vertexA"])
     
-        """if actualedge["vertexA"] == iata:
+        if actualedge["vertexA"] == iata:
             if not lt.isPresent(result, actualedge["vertexB"]):
-                lt.addLast(result,  actualedge["vertexB"])"""
+                lt.addLast(result,  actualedge["vertexB"])
 
     printclosedAirport(analyzer, result, iata)
 # Funciones utilizadas para comparar elementos dentro de una lista
@@ -409,6 +409,7 @@ def printclosedAirport(analyzer, result, iata):
 
     airports = analyzer["airportsByIATA"]
     size = lt.size(result)
+    ms.sort(result, cmpIATA)
     result = result["elements"]
     table = PrettyTable()
     table.field_names = ["IATA", "Nombre", "Ciudad", "País"]
