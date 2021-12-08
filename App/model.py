@@ -270,10 +270,12 @@ def minRoute(analyzer):
 
         airport1 = closestAirport(analyzer, dictCity1)
         distance1 = haversine((float(dictCity1["lat"]), float(dictCity1["lng"])), (float(airport1["Latitude"]), float(airport1["Longitude"]))) #Km
-        
+        print("\nCIUDAD Y AEROPUERTO DE SALIDA")
+        printAirportAndCity(airport1, dictCity1, distance1)
         airport2 = closestAirport(analyzer, dictCity2)
         distance2 = haversine((float(dictCity2["lat"]), float(dictCity2["lng"])), (float(airport2["Latitude"]), float(airport2["Longitude"]))) #Km
-
+        print("\nCIUDAD Y AEROPUERTO DE LLEGADA")
+        printAirportAndCity(airport2, dictCity2,distance2)
 
     except Exception as exp:
         error.reraise(exp, 'model:minRoute')
@@ -514,7 +516,20 @@ def findAirports(tree, north, south, east, west):
     if lt.size(filteredAirports) == 0:
         filteredAirports = findAirports(tree, north+(north*0.005), south-(south*0.005), west+(west*0.005), east-(east*0.005))
 
-    return filteredAirports  
+    return filteredAirports 
+
+def printAirportAndCity(airport, city, distance):
+    table0 = PrettyTable()
+    table0.field_names = ["Ciudad", "Estado", "País", "Latitud", "Longitud"]
+    table0.add_row([city["city_ascii"], city["admin_name"],city["country"], city["lat"], city["lng"]])
+    
+    table1 = PrettyTable()
+    table1.field_names = ["Nombre", "Ciudad", "País", "IATA", "Latitud", "Longitud"]
+    table1.add_row([airport["Name"], airport["City"], airport["Country"], airport["IATA"], airport["Latitude"], airport["Longitude"]])
+    
+    print(table0)
+    print(table1)
+    print("La distancia entre la ciudad y el aeropuerto es de ", distance, " km.")
 
     #def map(city):
     """
