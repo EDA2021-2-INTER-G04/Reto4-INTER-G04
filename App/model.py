@@ -42,6 +42,9 @@ from DISClib.Algorithms.Graphs import scc as scc
 from DISClib.ADT.graph import gr
 from DISClib.Algorithms.Graphs import dijsktra as djk
 from DISClib.Algorithms.Graphs.bellmanford import BellmanFord
+import DISClib.Algorithms.Graphs.prim as prim
+import DISClib.Algorithms.Graphs.dfs as dfs
+import DISClib.ADT.stack as stack
 assert cf
 
 """
@@ -89,7 +92,7 @@ def addRoute(analyzer, route):
         verifyDistance(route)
         #addAirportRoute(analyzer, origin)
         #addAirportRoute(analyzer, destination)
-        addConnection(analyzer, origin, destination, route["distance_km"])
+        addConnection(analyzer['routes'], origin, destination, route["distance_km"])
         return analyzer
 
     except Exception as exp:
@@ -106,13 +109,14 @@ def addAirportRoute(graph, airportID):
     except Exception as exp:
         error.reraise(exp, 'model:addAirportRoute')
 
-def addConnection(analyzer, origin, destination, distance):
+def addConnection(graph, origin, destination, distance):
     """
     Adiciona un arco entre dos aeropuertos
     """
-    edge = gr.getEdge(analyzer['routes'], origin, destination)
+    distance = float(distance)
+    edge = gr.getEdge(graph, origin, destination)
     if edge is None:
-        gr.addEdge(analyzer['routes'], origin, destination, distance)
+        gr.addEdge(graph, origin, destination, distance)
 
 def addAirport(analyzer, airport):
     lat = str(round(float(airport["Latitude"]),2))
@@ -283,6 +287,13 @@ def minRoute(analyzer):
             print("\nNo hay ruta entre las ciudades.")
         else:
             ruta = minimumCostPath(analyzer, destAirport)
+            
+        print("\nCIUDAD Y AEROPUERTO DE SALIDA")
+        printAirportAndCity(airport1, dictCity1, distance1)
+        airport2 = closestAirport(analyzer, dictCity2)
+        distance2 = haversine((float(dictCity2["lat"]), float(dictCity2["lng"])), (float(airport2["Latitude"]), float(airport2["Longitude"]))) #Km
+        print("\nCIUDAD Y AEROPUERTO DE LLEGADA")
+        printAirportAndCity(airport2, dictCity2,distance2)
 
     except Exception as exp:
         error.reraise(exp, 'model:minRoute')
@@ -331,6 +342,56 @@ def getCity(city, analyzer):
     city = lt.getElement(mp.get(cities, city)["value"], 1)
 
     return city
+
+def travelerMiles(analyzer, departure, miles):
+    travelerKm = miles*1.6
+    road = prim.edgesMST(analyzer["roundTrip"], prim.PrimMST(analyzer["roundTrip"]))
+    minTree = gr.newGraph(size=gr.numVertices(analyzer["roundTrip"]), datastructure="ADJ_LIST", directed=False, comparefunction=compareAirportIds)
+
+    totalDistance = 0
+    for h in range(1, stack.size(road["mst"])+1):
+        actualRoute = stack.pop(road["mst"])
+        addAirportRoute(minTree, actualRoute["vertexA"])
+        addAirportRoute(minTree, actualRoute["vertexB"])
+        addConnection(minTree, actualRoute["vertexA"], actualRoute["vertexB"], float(actualRoute["weight"]))
+        totalDistance += float(actualRoute["weight"])
+
+    print("\nNúmero de aeropuertos posibles: ", gr.numVertices(minTree))
+    print("Distancia total (sumatoria): ", round(totalDistance,2))
+    print("Millas de viajero disponibles (km): ", travelerKm)
+
+    depthRoute = dfs.DepthFirstSearch(minTree, departure)
+    vertices = gr.vertices(minTree)
+    longest = 0
+    longestPath = None
+    for vertex in lt.iterator(vertices):
+        if vertex != departure:
+            path = dfs.pathTo(depthRoute, vertex)
+            if path != None:
+                if stack.size(path) > longest:
+                    longest = stack.size(path)
+                    longestPath = path
+
+    longestRoute = PrettyTable()
+    longestRoute.field_names = ["Salida", "Destino", "Distancia (km)"]
+    longestDistance = 0
+    for w in range(2, lt.size(longestPath)+1):
+        actualAirport = lt.getElement(longestPath, w)
+        actualEdge = gr.getEdge(minTree, lt.getElement(longestPath, w-1), actualAirport)
+        actualDistance = actualEdge["weight"]
+        longestDistance += actualDistance
+        longestRoute.add_row([lt.getElement(longestPath, w-1), actualAirport, actualDistance])
+
+    print("\nRUTA MÁS LARGA")
+    print(longestRoute)
+
+    diff = round(((travelerKm-longestDistance)/1.6),2)
+    if diff > 0:
+        print("\nAl viajero le sobran ", diff, " millas para completar el recorrido.")
+    elif 0 > diff:
+        print("\nAl viajero le faltan " -diff, " millas para completar el recorrido.")
+    elif diff == 0:
+        print("\nEl viajero tiene las millas exactas para completar el recorrido.")    
 
 # Funciones utilizadas para comparar elementos dentro de una lista
 def compareAirportIds(airport, keyValueAirport):
@@ -409,6 +470,51 @@ def verifyDistance(route):
     if route['distance_km'] == '':
         route['distance_km'] = 0
 
+def closestAirport(analyzer, city):
+    lon = city["lng"]
+    lat = city["lat"]
+
+    airportsTree = analyzer["airportsByLat"]
+    north = float(lat)+(float(lat)*0.005)
+    south = float(lat)-(float(lat)*0.005)
+    east = float(lon)-(float(lon)*0.005)
+    west = float(lon)+(float(lon)*0.005)
+
+    closeAirports = findAirports(airportsTree, north, south, east, west) 
+
+    if lt.size(closeAirports) > 1:
+        minDistance = 1000000000000
+        closestAirport = None
+
+        for airport in lt.iterator(closeAirports):
+            distance = haversine((float(lat), float(lon)), (float(airport["Latitude"]), float(airport["Longitude"]))) #Km
+            if minDistance > distance:
+                minDistance = distance
+                closestAirport = airport
+    else:
+        closestAirport = lt.getElement(closeAirports, 1)
+
+    return closestAirport
+
+def findAirports(tree, north, south, east, west):
+    filteredByLat = om.values(tree, south, north) #Lista de mapas
+    filteredAirports = lt.newList("ARRAY_LIST")
+
+    if lt.size(filteredByLat) != 0:
+        for map in lt.iterator(filteredByLat):
+            filteredLon = om.values(map, east, west) #Lista de listas
+            if lt.size(filteredLon) != 0:
+                for lonList in lt.iterator(filteredLon):
+                    if lt.size(lonList) != 0:
+                        for airport in lt.iterator(lonList):
+                            lt.addLast(filteredAirports, airport)
+
+    if lt.size(filteredAirports) == 0:
+        filteredAirports = findAirports(tree, north+(north*0.005), south-(south*0.005), west+(west*0.005), east-(east*0.005))
+
+    return filteredAirports 
+
+#Funciones de impresión
 def printCityOptions(cityList):
     table = PrettyTable()
     table.field_names = ["No.", "Ciudad", "Latitud", "Longitud", "País", "Estado", "Población"]
@@ -548,6 +654,18 @@ def minimumCostPath(analyzer, destAirport):
     """
     path = djk.pathTo(analyzer['paths'], destAirport)
     return path 
+def printAirportAndCity(airport, city, distance):
+    table0 = PrettyTable()
+    table0.field_names = ["Ciudad", "Estado", "País", "Latitud", "Longitud"]
+    table0.add_row([city["city_ascii"], city["admin_name"],city["country"], city["lat"], city["lng"]])
+    
+    table1 = PrettyTable()
+    table1.field_names = ["Nombre", "Ciudad", "País", "IATA", "Latitud", "Longitud"]
+    table1.add_row([airport["Name"], airport["City"], airport["Country"], airport["IATA"], airport["Latitude"], airport["Longitude"]])
+    
+    print(table0)
+    print(table1)
+    print("La distancia entre la ciudad y el aeropuerto es de ", distance, " km.")
 
     #def map(city):
     """

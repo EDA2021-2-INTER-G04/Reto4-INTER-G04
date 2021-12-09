@@ -58,8 +58,6 @@ def printMenu():
     print("5- Encontrar la ruta más corta entre ciudades")
     print("6- Utilizar las millas de viajero ")
     print("7- Cuantificar el efecto de un aeropuerto cerrado ")
-    print("8- Comparar con servicio WEB externo")
-    print("9- Visualizar gráficamente los requerimientos")
     print("0- Salir")
     print("*******************************************")
 
@@ -126,6 +124,13 @@ def optionSeven(analyzer):
     elapsed_time_ms = (stop_time-start_time)*1000
     print("\nLa operación tardó ", elapsed_time_ms, " ms.")
 
+def optionSix(analyzer):
+    start_time = time.process_time()
+    departure = input("Ingrese el código IATA del aeropuerto de partida: ")
+    miles = float(input("Ingrese la cantidad de millas de viajero disponibles: "))
+    controller.travelerMiles(analyzer, departure, miles)
+    stop_time = time.process_time()
+    print("\nLa operación tardó ", (stop_time-start_time)*1000, " ms.")
 """
 Menu principal
 """
@@ -154,7 +159,7 @@ def thread_cycle():
             optionFive(analyzer)
 
         elif int(inputs[0]) == 6:
-            #optionSix(analyzer)
+            optionSix(analyzer)
             pass
 
         elif int(inputs[0]) == 7:
