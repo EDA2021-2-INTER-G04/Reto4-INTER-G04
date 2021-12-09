@@ -40,7 +40,7 @@ import folium
 from prettytable import PrettyTable
 from DISClib.Algorithms.Graphs import scc as scc
 from DISClib.ADT.graph import gr
-from DISClib.Algorithms.Graphs.dijsktra import Dijkstra
+from DISClib.Algorithms.Graphs import dijsktra as djk
 from DISClib.Algorithms.Graphs.bellmanford import BellmanFord
 import DISClib.Algorithms.Graphs.prim as prim
 import DISClib.Algorithms.Graphs.dfs as dfs
@@ -60,7 +60,8 @@ def newAnalyzer():
                     'airpotsByIATA' : None,
                     'routes': None,
                     'cities': None,
-                    'roundTrip': None
+                    'roundTrip': None,
+                    'paths': None
                     }
 
         analyzer['airportsByLat'] = om.newMap(omaptype='RBT',
@@ -274,6 +275,19 @@ def minRoute(analyzer):
 
         airport1 = closestAirport(analyzer, dictCity1)
         distance1 = haversine((float(dictCity1["lat"]), float(dictCity1["lng"])), (float(airport1["Latitude"]), float(airport1["Longitude"]))) #Km
+        initialAirport = airport1["IATA"]
+
+        airport2 = closestAirport(analyzer, dictCity2)
+        distance2 = haversine((float(dictCity2["lat"]), float(dictCity2["lng"])), (float(airport2["Latitude"]), float(airport2["Longitude"]))) #Km
+        destAirport = airport2["IATA"]
+
+        minimumCostPaths(analyzer, initialAirport)
+        haspath = hasPath(analyzer, destAirport)
+        if haspath == False:
+            print("\nNo hay ruta entre las ciudades.")
+        else:
+            ruta = minimumCostPath(analyzer, destAirport)
+            
         print("\nCIUDAD Y AEROPUERTO DE SALIDA")
         printAirportAndCity(airport1, dictCity1, distance1)
         airport2 = closestAirport(analyzer, dictCity2)
@@ -573,6 +587,73 @@ def printFirstLastCities(analyzer):
     print("\nPRIMERA Y ÚLTIMA CIUDAD CARGADA")
     print(table)
 
+def closestAirport(analyzer, city):
+    lon = city["lng"]
+    lat = city["lat"]
+
+    airportsTree = analyzer["airportsByLat"]
+    north = float(lat)+(float(lat)*0.005)
+    south = float(lat)-(float(lat)*0.005)
+    east = float(lon)-(float(lon)*0.005)
+    west = float(lon)+(float(lon)*0.005)
+
+    closeAirports = findAirports(airportsTree, north, south, east, west) 
+
+    if lt.size(closeAirports) > 1:
+        minDistance = 1000000000000
+        closestAirport = None
+
+        for airport in lt.iterator(closeAirports):
+            distance = haversine((float(lat), float(lon)), (float(airport["Latitude"]), float(airport["Longitude"]))) #Km
+            if minDistance > distance:
+                minDistance = distance
+                closestAirport = airport
+    else:
+        closestAirport = lt.getElement(closeAirports, 1)
+
+    return closestAirport
+
+def findAirports(tree, north, south, east, west):
+    filteredByLat = om.values(tree, south, north) #Lista de mapas
+    filteredAirports = lt.newList("ARRAY_LIST")
+
+    if lt.size(filteredByLat) != 0:
+        for map in lt.iterator(filteredByLat):
+            filteredLon = om.values(map, east, west) #Lista de listas
+            if lt.size(filteredLon) != 0:
+                for lonList in lt.iterator(filteredLon):
+                    if lt.size(lonList) != 0:
+                        for airport in lt.iterator(lonList):
+                            lt.addLast(filteredAirports, airport)
+
+    if lt.size(filteredAirports) == 0:
+        filteredAirports = findAirports(tree, north+(north*0.005), south-(south*0.005), west+(west*0.005), east-(east*0.005))
+
+    return filteredAirports 
+
+def minimumCostPaths(analyzer, initialAirport):
+    """
+    Calcula los caminos de costo mínimo desde el aereopuerto inicial 
+    a todos los demas vertices del grafo
+    """
+    analyzer['paths'] = djk.Dijkstra(analyzer['routes'], initialAirport)
+    return analyzer
+
+def hasPath(analyzer, destAirport):
+    """
+    Indica si existe un camino desde la estacion inicial a la estación destino
+    Se debe ejecutar primero la funcion minimumCostPaths
+    """
+    return djk.hasPathTo(analyzer['paths'], destAirport)
+
+def minimumCostPath(analyzer, destAirport):
+    """
+    Retorna el camino de costo minimo entre la estacion de inicio
+    y la estacion destino
+    Se debe ejecutar primero la funcion minimumCostPaths
+    """
+    path = djk.pathTo(analyzer['paths'], destAirport)
+    return path 
 def printAirportAndCity(airport, city, distance):
     table0 = PrettyTable()
     table0.field_names = ["Ciudad", "Estado", "País", "Latitud", "Longitud"]
