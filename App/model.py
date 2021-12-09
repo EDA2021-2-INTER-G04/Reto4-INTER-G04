@@ -40,7 +40,7 @@ import folium
 from prettytable import PrettyTable
 from DISClib.Algorithms.Graphs import scc as scc
 from DISClib.ADT.graph import gr
-from DISClib.Algorithms.Graphs.dijsktra import Dijkstra
+from DISClib.Algorithms.Graphs import dijsktra as djk
 from DISClib.Algorithms.Graphs.bellmanford import BellmanFord
 assert cf
 
@@ -57,7 +57,8 @@ def newAnalyzer():
                     'airpotsByIATA' : None,
                     'routes': None,
                     'cities': None,
-                    'roundTrip': None
+                    'roundTrip': None,
+                    'paths': None
                     }
 
         analyzer['airportsByLat'] = om.newMap(omaptype='RBT',
@@ -270,10 +271,18 @@ def minRoute(analyzer):
 
         airport1 = closestAirport(analyzer, dictCity1)
         distance1 = haversine((float(dictCity1["lat"]), float(dictCity1["lng"])), (float(airport1["Latitude"]), float(airport1["Longitude"]))) #Km
-        
+        initialAirport = airport1["IATA"]
+
         airport2 = closestAirport(analyzer, dictCity2)
         distance2 = haversine((float(dictCity2["lat"]), float(dictCity2["lng"])), (float(airport2["Latitude"]), float(airport2["Longitude"]))) #Km
+        destAirport = airport2["IATA"]
 
+        minimumCostPaths(analyzer, initialAirport)
+        haspath = hasPath(analyzer, destAirport)
+        if haspath == False:
+            print("\nNo hay ruta entre las ciudades.")
+        else:
+            ruta = minimumCostPath(analyzer, destAirport)
 
     except Exception as exp:
         error.reraise(exp, 'model:minRoute')
@@ -514,7 +523,31 @@ def findAirports(tree, north, south, east, west):
     if lt.size(filteredAirports) == 0:
         filteredAirports = findAirports(tree, north+(north*0.005), south-(south*0.005), west+(west*0.005), east-(east*0.005))
 
-    return filteredAirports  
+    return filteredAirports 
+
+def minimumCostPaths(analyzer, initialAirport):
+    """
+    Calcula los caminos de costo mínimo desde el aereopuerto inicial 
+    a todos los demas vertices del grafo
+    """
+    analyzer['paths'] = djk.Dijkstra(analyzer['routes'], initialAirport)
+    return analyzer
+
+def hasPath(analyzer, destAirport):
+    """
+    Indica si existe un camino desde la estacion inicial a la estación destino
+    Se debe ejecutar primero la funcion minimumCostPaths
+    """
+    return djk.hasPathTo(analyzer['paths'], destAirport)
+
+def minimumCostPath(analyzer, destAirport):
+    """
+    Retorna el camino de costo minimo entre la estacion de inicio
+    y la estacion destino
+    Se debe ejecutar primero la funcion minimumCostPaths
+    """
+    path = djk.pathTo(analyzer['paths'], destAirport)
+    return path 
 
     #def map(city):
     """
