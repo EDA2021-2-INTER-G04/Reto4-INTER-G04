@@ -357,7 +357,7 @@ def travelerMiles(analyzer, departure, miles):
         totalDistance += float(actualRoute["weight"])
 
     print("\nNúmero de aeropuertos posibles: ", gr.numVertices(minTree))
-    print("Distancia total (sumatoria): ", round(totalDistance,2))
+    print("Distancia total: ", round(totalDistance,2))
     print("Millas de viajero disponibles (km): ", travelerKm)
 
     depthRoute = dfs.DepthFirstSearch(minTree, departure)
@@ -665,36 +665,4 @@ def printAirportAndCity(airport, city, distance):
     
     print(table0)
     print(table1)
-    print("La distancia entre la ciudad y el aeropuerto es de ", distance, " km.")
-
-    #def map(city):
-    """
-    lat = float(city["lat"])
-    lon = float(city["lng"])
-    map = folium.Map(location=[lat,lon], zoom_start=10, control_scale=True)
-
-    #Aumentar north y west = *
-    #Aumentar south y east = /
-    north = lat*1.001
-    south = lat/1.001
-    east = lon/1.001
-    west = lon*1.001
-    folium.Rectangle(
-    bounds=[[north,east],[south, west],[north,west],[south,east]],
-    color="#3186cc",
-    fill=True,
-    fill_color="#3186cc",
-    ).add_to(map)
-
-    folium.Rectangle(
-    bounds=[[north*1.001,east/1.001],[south/1.001, west*1.001],[north*1.001,west*1.001],[south/1.001,east/1.001]],
-    color="#ff0000",
-    fill=True,
-    fill_color="#ff0000",
-    ).add_to(map)
-
-    map.save("map.html")
-    mapDir = cf.file_dir + "/map.html"
-    print(mapDir)
-    webbrowser.open(mapDir, new=1)
-    """
+    print("La distancia entre la ciudad y el aeropuerto es de ", round(distance,2), " km.")
