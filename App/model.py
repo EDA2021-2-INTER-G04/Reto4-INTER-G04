@@ -281,19 +281,34 @@ def minRoute(analyzer):
         distance2 = haversine((float(dictCity2["lat"]), float(dictCity2["lng"])), (float(airport2["Latitude"]), float(airport2["Longitude"]))) #Km
         destAirport = airport2["IATA"]
 
-        minimumCostPaths(analyzer, initialAirport)
-        haspath = hasPath(analyzer, destAirport)
-        if haspath == False:
-            print("\nNo hay ruta entre las ciudades.")
-        else:
-            ruta = minimumCostPath(analyzer, destAirport)
-            
         print("\nCIUDAD Y AEROPUERTO DE SALIDA")
         printAirportAndCity(airport1, dictCity1, distance1)
         airport2 = closestAirport(analyzer, dictCity2)
         distance2 = haversine((float(dictCity2["lat"]), float(dictCity2["lng"])), (float(airport2["Latitude"]), float(airport2["Longitude"]))) #Km
         print("\nCIUDAD Y AEROPUERTO DE LLEGADA")
         printAirportAndCity(airport2, dictCity2,distance2)
+
+        ruta = None
+        minimumCostPaths(analyzer, initialAirport)
+        haspath = hasPath(analyzer, destAirport)
+        if haspath == False:
+            print("\nNo hay ruta entre las ciudades.")
+        else:
+            ruta = minimumCostPath(analyzer, destAirport)
+        
+        totalDistance = 0
+        result = PrettyTable()
+        result.field_names = ["Salida", "Destino", "Distancia"]
+        if ruta != None:
+            for route in lt.iterator(ruta):
+                result.add_row([route["vertexA"],route["vertexB"],float(route["weight"])])
+                totalDistance += float(route["weight"])
+        totalDistance += (distance1 + distance2)
+
+        print("\nRUTA MÁS CORTA")
+        print(result)  
+
+        print("\nDistancia total de la ruta: ", round(totalDistance,2), " km.")      
 
     except Exception as exp:
         error.reraise(exp, 'model:minRoute')
@@ -357,7 +372,7 @@ def travelerMiles(analyzer, departure, miles):
         totalDistance += float(actualRoute["weight"])
 
     print("\nNúmero de aeropuertos posibles: ", gr.numVertices(minTree))
-    print("Distancia total: ", round(totalDistance,2))
+    print("Distancia total (km): ", round(totalDistance,2))
     print("Millas de viajero disponibles (km): ", travelerKm)
 
     depthRoute = dfs.DepthFirstSearch(minTree, departure)
@@ -382,10 +397,12 @@ def travelerMiles(analyzer, departure, miles):
         longestDistance += actualDistance
         longestRoute.add_row([lt.getElement(longestPath, w-1), actualAirport, actualDistance])
 
-    print("\nRUTA MÁS LARGA")
+    print("\nRUTA CON LA MAYOR CANTIDAD DE CIUDADES")
     print(longestRoute)
 
-    diff = round(((travelerKm-longestDistance)/1.6),2)
+    print("\nDistancia de la ruta (km): ", round(longestDistance,2))
+
+    diff = round(((travelerKm-(longestDistance*2))/1.6),2)
     if diff > 0:
         print("\nAl viajero le sobran ", diff, " millas para completar el recorrido.")
     elif 0 > diff:
