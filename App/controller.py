@@ -124,6 +124,10 @@ def printFirstLastCities(analyzer):
 
     model.printFirstLastCities(analyzer)
 
+def travelerMiles(analyzer, departure, miles):
+
+    model.travelerMiles(analyzer, departure, miles)
+
 #Funciones auxiliares
 def selectSample(sample):
     airportStr = "airports-utf8-"
