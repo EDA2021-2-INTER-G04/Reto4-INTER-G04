@@ -155,17 +155,14 @@ def thread_cycle():
             pass
 
         elif int(inputs[0]) == 5:
-            #Requerimiento 3
             optionFive(analyzer)
 
         elif int(inputs[0]) == 6:
             optionSix(analyzer)
-            pass
 
         elif int(inputs[0]) == 7:
             optionSeven(analyzer)
-            pass
-
+        
         else:
             sys.exit(0)
     sys.exit(0)
